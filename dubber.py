@@ -63,7 +63,6 @@ def process_video(input_video_path: str, output_video_path: str):
                 encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
                 sample_rate_hertz=16000,
                 language_code="fa-IR",
-                alternative_language_codes=["en-US"],
                 enable_word_time_offsets=True,
                 enable_automatic_punctuation=True,
                 model="video"
