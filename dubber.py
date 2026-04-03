@@ -1,13 +1,43 @@
-import os
-import tempfile
-import logging
-import html
+import subprocess
+import re
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, vfx
 from google.cloud import speech, translate_v2 as translate, texttospeech
 
 logger = logging.getLogger(__name__)
 
-CHUNK_DURATION_SEC = 55  # 55 seconds chunk to stay strictly under 1 minute limit
+def get_silence_timestamps(audio_path, threshold="-30dB", duration="0.4"):
+    """Uses ffmpeg to detect silences in the audio."""
+    cmd = [
+        "ffmpeg", "-i", audio_path,
+        "-af", f"silencedetect=noise={threshold}:d={duration}",
+        "-f", "null", "-"
+    ]
+    process = subprocess.Popen(cmd, stderr=subprocess.PIPE, text=True)
+    _, stderr = process.communicate()
+    
+    # Extract silence_end timestamps
+    silence_ends = [float(t) for t in re.findall(r"silence_end: ([\d\.]+)", stderr)]
+    return silence_ends
+
+def adjust_audio_speed_pitch_preserved(input_path, speed_factor):
+    """Speeds up or slows down audio without changing pitch using ffmpeg atempo."""
+    output_path = tempfile.mktemp(suffix=".mp3")
+    
+    # atempo filter is limited to [0.5, 2.0]. Chain filters if out of range.
+    filters = []
+    temp_factor = speed_factor
+    while temp_factor > 2.0:
+        filters.append("atempo=2.0")
+        temp_factor /= 2.0
+    while temp_factor < 0.5:
+        filters.append("atempo=0.5")
+        temp_factor /= 0.5
+    filters.append(f"atempo={temp_factor}")
+    
+    filter_str = ",".join(filters)
+    cmd = ["ffmpeg", "-y", "-i", input_path, "-filter:a", filter_str, output_path]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    return output_path
 
 def process_video(input_video_path: str, output_video_path: str, source_lang_choice: str = "Farsi"):
     logger.info(f"Processing video with source language choice: {source_lang_choice}")
@@ -55,12 +85,36 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
         translate_client = translate.Client()
         tts_client = texttospeech.TextToSpeechClient()
 
-        logger.info(f"Total audio duration: {total_duration} seconds. Chunking into {CHUNK_DURATION_SEC} sec segments.")
+        # 2. Smart Chunking (Silence-based)
+        logger.info("Detecting silences for smart chunking...")
+        silence_points = get_silence_timestamps(original_audio_path)
+        
+        chunks = []
+        last_cut = 0
+        target_chunk_size = 50
+        
+        while last_cut < total_duration:
+            next_target = last_cut + target_chunk_size
+            if next_target >= total_duration:
+                chunks.append((last_cut, total_duration))
+                break
+            
+            # Find the best silence point between [next_target - 10, next_target + 5]
+            best_point = next_target
+            candidates = [p for p in silence_points if next_target - 15 < p < next_target + 10]
+            if candidates:
+                # Pick the one closest to next_target
+                best_point = min(candidates, key=lambda p: abs(p - next_target))
+            
+            # Ensure we don't exceed the 60s Google STT limit (leave buffer)
+            if best_point - last_cut > 58:
+                best_point = last_cut + 58
+                
+            chunks.append((last_cut, best_point))
+            last_cut = best_point
 
-        # 2. Transcription (Farsi)
-        for chunk_start in range(0, int(total_duration), CHUNK_DURATION_SEC):
-            chunk_end = min(chunk_start + CHUNK_DURATION_SEC, total_duration)
-            logger.info(f"Processing STT for chunk from {chunk_start}s to {chunk_end}s")
+        for chunk_start, chunk_end in chunks:
+            logger.info(f"Processing STT for smart chunk from {chunk_start:.2f}s to {chunk_end:.2f}s")
             
             chunk = video.audio.subclip(chunk_start, chunk_end)
             chunk_path = tempfile.mktemp(suffix=".wav")
@@ -97,7 +151,7 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
                     text = alt.transcript
                     
                     global_start_time_sec = chunk_start + start_time_sec
-                    logger.info(f"Original Transcript at {global_start_time_sec}s (orig duration {original_duration:.2f}s): {text}")
+                    logger.info(f"Transcript at {global_start_time_sec:.2f}s (dur {original_duration:.2f}s): {text}")
                     farsi_transcript_lines.append(text)
                     
                     # 3. Translation
@@ -106,8 +160,9 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
                     logger.info(f"Urdu Translation: {urdu_text}")
                     urdu_transcript_lines.append(urdu_text)
                     
-                    # 4. Text-to-Speech
-                    synthesis_input = texttospeech.SynthesisInput(text=urdu_text)
+                    # 4. Text-to-Speech (using SSML for better pronunciation)
+                    ssml_text = f"<speak>{urdu_text}</speak>"
+                    synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
                     voice = texttospeech.VoiceSelectionParams(
                         language_code="ur-IN",
                         name="ur-IN-Wavenet-B"
@@ -120,14 +175,25 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
                         input=synthesis_input, voice=voice, audio_config=audio_config
                     )
                     
-                    tts_path = tempfile.mktemp(suffix=".mp3")
-                    with open(tts_path, "wb") as out:
+                    raw_tts_path = tempfile.mktemp(suffix=".mp3")
+                    with open(raw_tts_path, "wb") as out:
                         out.write(tts_response.audio_content)
+                    
+                    # Pitch-Preserved Speed Sync
+                    tts_clip_temp = AudioFileClip(raw_tts_path)
+                    final_tts_path = raw_tts_path
+                    
+                    if tts_clip_temp.duration > original_duration and original_duration > 0:
+                        speed_factor = tts_clip_temp.duration / original_duration
+                        logger.info(f"Speeding up Urdu (factor {speed_factor:.2f}) with pitch preservation...")
+                        final_tts_path = adjust_audio_speed_pitch_preserved(raw_tts_path, speed_factor)
+                    
+                    tts_clip_temp.close()
                     
                     stt_results.append({
                         "start_sec": global_start_time_sec,
-                        "audio_path": tts_path,
-                        "original_duration": original_duration
+                        "audio_path": final_tts_path,
+                        "raw_path": raw_tts_path if final_tts_path != raw_tts_path else None
                     })
             except Exception as e:
                 logger.error(f"Error processing chunk starting at {chunk_start}s: {e}")
@@ -145,16 +211,7 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
         loaded_tts_clips = []
         
         for item in stt_results:
-            tts_clip = AudioFileClip(item["audio_path"])
-            
-            # Speed up Urdu audio if it's longer than the original speech segment
-            if tts_clip.duration > item["original_duration"] and item["original_duration"] > 0:
-                speed_factor = tts_clip.duration / item["original_duration"]
-                logger.info(f"Speeding up Urdu clip (factor {speed_factor:.2f}) to fit {item['original_duration']:.2f}s")
-                # vfx.speedx is the correct function in MoviePy 1.0.3 for both audio and video
-                tts_clip = tts_clip.fx(vfx.speedx, speed_factor)
-            
-            tts_clip = tts_clip.set_start(item["start_sec"])
+            tts_clip = AudioFileClip(item["audio_path"]).set_start(item["start_sec"])
             audio_clips.append(tts_clip)
             loaded_tts_clips.append(tts_clip)
                 
@@ -183,6 +240,8 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
         for item in stt_results:
             if os.path.exists(item["audio_path"]):
                 os.remove(item["audio_path"])
+            if item.get("raw_path") and os.path.exists(item["raw_path"]):
+                os.remove(item["raw_path"])
         
         if os.path.exists(original_audio_path):
             os.remove(original_audio_path)
