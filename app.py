@@ -24,6 +24,7 @@ st.title("Auto-Detect Video Dubber (to Urdu)")
 st.markdown("Upload a Farsi or English video to automatically translate and dub it into Urdu.")
 
 uploaded_file = st.file_uploader("Upload a video (MP4/MOV)", type=["mp4", "mov"])
+source_lang = st.selectbox("Select Source Language", ["Farsi", "English", "Auto-Detect"], index=0)
 
 if uploaded_file is not None:
     # We load the uploaded file into a temporary input location
@@ -36,7 +37,7 @@ if uploaded_file is not None:
     with st.spinner("Processing video... This may take several minutes (Extracting audio, STT, Translating, TTS, Assembling)."):
         try:
             # Run the dubbing pipeline
-            final_video_path, farsi_text, urdu_text = process_video(temp_input, output_path)
+            final_video_path, farsi_text, urdu_text = process_video(temp_input, output_path, source_lang_choice=source_lang)
             
             # Load the bytes so we can safely delete the local temp files afterwards
             with open(temp_input, "rb") as f:

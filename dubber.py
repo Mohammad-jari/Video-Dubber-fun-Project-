@@ -10,8 +10,22 @@ logger = logging.getLogger(__name__)
 
 CHUNK_DURATION_SEC = 55  # 55 seconds chunk to stay strictly under 1 minute limit
 
-def process_video(input_video_path: str, output_video_path: str):
-    logger.info("Loading video to extract audio...")
+def process_video(input_video_path: str, output_video_path: str, source_lang_choice: str = "Farsi"):
+    logger.info(f"Processing video with source language choice: {source_lang_choice}")
+    
+    # Smart Language & Model Selection
+    if source_lang_choice == "Farsi":
+        language_code = "fa-IR"
+        alt_langs = []
+        model = "default"
+    elif source_lang_choice == "English":
+        language_code = "en-US"
+        alt_langs = []
+        model = "default"
+    else:  # "Auto-Detect"
+        language_code = "fa-IR"
+        alt_langs = ["en-US"]
+        model = "default"
     
     video = None
     try:
@@ -62,10 +76,11 @@ def process_video(input_video_path: str, output_video_path: str):
             config = speech.RecognitionConfig(
                 encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
                 sample_rate_hertz=16000,
-                language_code="fa-IR",
+                language_code=language_code,
+                alternative_language_codes=alt_langs,
                 enable_word_time_offsets=True,
                 enable_automatic_punctuation=True,
-                model="video"
+                model=model
             )
 
             try:
