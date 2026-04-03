@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "farsi-to-urdu-dubber",
+  "private_key_id": "a197665a6a37dcb5c863f8a576ba706bd4c295de",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC/EqJmq/ZbBFYe\nED4R5CFVPNK5D16+D2MPPinPB14a2LzB3BNjdeDuOCINCQPcbxMohtXnYW9IbWhX\n9eUb1LLOIOsFZdwHa4rc/bOdUSZQ2mb7Vxl2k1M5xHrFayHbDvVaBduWZywMxWx/\niAVKyNyS0tuHi5pEJFlQR1egg5crP/ycRy8rnphm6nS4S12hiZ2b++XAlcEuJLz3\nJahivjZYaEjdr5hbiJZQ+HTQgc9GFrzYYRRB9tzyPNgYoDbvrbYGMqTcReZhrTti\nX9/3QSiPr76qyj+0SgdRUOPXrFavkklzCrmChd2ZWgUHONkQbIupY1CDzT/pf0K8\nwCHnfyXlAgMBAAECggEAKALzMpxeg5tCHFwK32y+BS8uMlYTYSnwNLwv/Zw9mtIZ\nnt/iyIBiCIiFKuUhI5s38BPiPahz6P8OK2NA5aXSBqOyi2gT3hLpWpMe9nnMlABU\nMdxApwm9Uxq/mdEwHwMAImiZHeL/gLIj4QXfE9TBidZxZa44cP4KnOq/oQuFT6cj\nKUVFkZFVYTydoTVg1Ii04JIY9qz8qE4FHCbt1ASDQKt/ZFiINiJK/msGhaeBCjeD\njiVX9lClGXwCoFLaZmpWUGA3N11KbG1lLzUJjxTAwK7j1wEHBB4gh2QW47uW3XW8\n5kNHV1RQJMj6iRBwWO/caczb1zbfyVnAKyWlzgFPUQKBgQDjYpyxO9OeOgVOVwIe\nIFZKtEA3/Pws1ShX+vN+MFia7EfzX8dlvFCe16bI/XRSJInk1V9LtbZCZUi/sXMo\nLJtPtFC+67Fwx+22kWaDMhHAINUqE/FXDWhCGioi9VoBkTvS3kPlbbUsWfg4hUj8\nlDEQuFXAzO89c8k77I6T2ohctQKBgQDXHjCwuYHrr0o1lz8qO08GwVgV5M3599Cj\nkL6lnIHfNPP6jrhdGlVlNKBGVJft0IMuQ49wM1ZJIjp6izJl1mqFRZf7F3fhjPlB\nQBcwgw06W/3/tx29rO2AOVrgUavRTPE8gdldHC0IqE17yrODY0PYN4bO9DhfjCCm\nvlOgfxOScQKBgQCaicHO3sdDSVGj3ZSN3xJmsTzYEHNfEPvbV643PCpsGFwKNzUw\nmpz8Z7pt7Xwp+7VQNggPT49wbp/T0Ilga3ie4gDi0RMGgIq5wvY2Akh4GJhngahL\nrswF6PxsR+4FFKzg8riYbEhuvTLrTwK8zwbNw0pcv6t1S4Uf2fVI3YRB5QKBgQCF\nuyj91HVmNXTm1/3WnURFqNC/25wJN/wmkwdSIXfDcUHzk+IdTw+jeRHiZxiEKUpD\n6pAzalbL5FGCeSJ9mMxjyZ3v5OkL+P3DiLph2DbS/vlqjUYZ8nU7b2yFY4By/2hA\n+2BLuAZvCWISATOUDJPSyMIvyjd5fr2Vq2CFuDpMoQKBgAxk4q/GNNUcgp/h8NvX\nnbvMB9q98Ap7VDfSbh4a6yo0LFDrivkQdoTF/upoPUUaQguS+8ZuPI2EJEifDJWz\nl/36S8I5otM5kynYKOxiOviqaxJrjrQMUVZ6hgDXqT8UpyolR6G0ENKD6S3h/51g\n6EeG3JxXWEtr7bpO/AtjOHm8\n-----END PRIVATE KEY-----\n",
+  "client_email": "jari-825@farsi-to-urdu-dubber.iam.gserviceaccount.com",
+  "client_id": "108415966564638741896",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/jari-825%40farsi-to-urdu-dubber.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
