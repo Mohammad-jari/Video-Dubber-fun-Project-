@@ -2,10 +2,19 @@ import streamlit as st
 import tempfile
 import os
 
-# Automatically set Google Cloud credentials for local testing
+# Setup Google Cloud Credentials
 local_key_path = "farsi-to-urdu-dubber-a197665a6a37.json"
-if os.path.exists(local_key_path):
+
+if "gcp_service_account_json" in st.secrets:
+    creds_path = os.path.join(tempfile.gettempdir(), "gcp_creds.json")
+    with open(creds_path, "w") as f:
+        f.write(st.secrets["gcp_service_account_json"])
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+elif os.path.exists(local_key_path):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = local_key_path
+else:
+    st.error("Google Cloud credentials not found. Please configure Streamlit secrets (gcp_service_account_json) or provide a local JSON key file.")
+    st.stop()
 
 from dubber import process_video
 
