@@ -2,8 +2,7 @@ import os
 import tempfile
 import logging
 import html
-from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
-import moviepy.audio.fx.all as afx
+from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, vfx
 from google.cloud import speech, translate_v2 as translate, texttospeech
 
 logger = logging.getLogger(__name__)
@@ -152,7 +151,8 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
             if tts_clip.duration > item["original_duration"] and item["original_duration"] > 0:
                 speed_factor = tts_clip.duration / item["original_duration"]
                 logger.info(f"Speeding up Urdu clip (factor {speed_factor:.2f}) to fit {item['original_duration']:.2f}s")
-                tts_clip = tts_clip.fx(afx.time_stretch, speed_factor)
+                # vfx.speedx is the correct function in MoviePy 1.0.3 for both audio and video
+                tts_clip = tts_clip.fx(vfx.speedx, speed_factor)
             
             tts_clip = tts_clip.set_start(item["start_sec"])
             audio_clips.append(tts_clip)
