@@ -1,3 +1,7 @@
+import os
+import tempfile
+import logging
+import html
 import subprocess
 import re
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, vfx
