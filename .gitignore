@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Credentials
+*.json
+
+# Virtual Environment
+venv/
+.env
+
+# Temp files
+*.mp4
+*.mp3
+*.wav
