@@ -5,6 +5,7 @@ import html
 import subprocess
 import re
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, vfx
+from moviepy.config import FFMPEG_BINARY
 from google.cloud import speech, translate_v2 as translate, texttospeech
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_silence_timestamps(audio_path, threshold="-30dB", duration="0.4"):
     """Uses ffmpeg to detect silences in the audio."""
     cmd = [
-        "ffmpeg", "-i", audio_path,
+        FFMPEG_BINARY, "-i", audio_path,
         "-af", f"silencedetect=noise={threshold}:d={duration}",
         "-f", "null", "-"
     ]
@@ -39,7 +40,7 @@ def adjust_audio_speed_pitch_preserved(input_path, speed_factor):
     filters.append(f"atempo={temp_factor}")
     
     filter_str = ",".join(filters)
-    cmd = ["ffmpeg", "-y", "-i", input_path, "-filter:a", filter_str, output_path]
+    cmd = [FFMPEG_BINARY, "-y", "-i", input_path, "-filter:a", filter_str, output_path]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     return output_path
 
