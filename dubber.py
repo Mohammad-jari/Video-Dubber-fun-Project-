@@ -10,6 +10,10 @@ from google.cloud import speech, translate_v2 as translate, texttospeech
 
 logger = logging.getLogger(__name__)
 
+# Constants for audio synchronization
+MAX_SPEED_FACTOR = 1.3  # Cap speed-up to 1.3x to maintain intelligibility
+MIN_SPEED_FACTOR = 0.5  # FFmpeg atempo lower limit
+
 def get_silence_timestamps(audio_path, threshold="-30dB", duration="0.4"):
     """Uses ffmpeg to detect silences in the audio."""
     cmd = [
@@ -26,6 +30,10 @@ def get_silence_timestamps(audio_path, threshold="-30dB", duration="0.4"):
 
 def adjust_audio_speed_pitch_preserved(input_path, speed_factor):
     """Speeds up or slows down audio without changing pitch using ffmpeg atempo."""
+    # Fast exit for speed factor of 1.0 (or very close)
+    if 0.98 <= speed_factor <= 1.02:
+        return input_path
+
     output_path = tempfile.mktemp(suffix=".mp3")
     
     # atempo filter is limited to [0.5, 2.0]. Chain filters if out of range.
@@ -188,10 +196,17 @@ def process_video(input_video_path: str, output_video_path: str, source_lang_cho
                     tts_clip_temp = AudioFileClip(raw_tts_path)
                     final_tts_path = raw_tts_path
                     
-                    if tts_clip_temp.duration > original_duration and original_duration > 0:
+                    if tts_clip_temp.duration > original_duration and original_duration > 0.1:
                         speed_factor = tts_clip_temp.duration / original_duration
-                        logger.info(f"Speeding up Urdu (factor {speed_factor:.2f}) with pitch preservation...")
-                        final_tts_path = adjust_audio_speed_pitch_preserved(raw_tts_path, speed_factor)
+                        
+                        # Cap the speed-up to prevent "too fast" audio
+                        if speed_factor > MAX_SPEED_FACTOR:
+                            logger.info(f"Speed factor {speed_factor:.2f} exceeds cap. Capping at {MAX_SPEED_FACTOR}.")
+                            speed_factor = MAX_SPEED_FACTOR
+                        
+                        if speed_factor > 1.02:
+                            logger.info(f"Speeding up Urdu (factor {speed_factor:.2f}) with pitch preservation...")
+                            final_tts_path = adjust_audio_speed_pitch_preserved(raw_tts_path, speed_factor)
                     
                     tts_clip_temp.close()
                     
