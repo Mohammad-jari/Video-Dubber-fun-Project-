@@ -111,6 +111,7 @@ def process_video(input_video_path: str, output_video_path: str):
                     })
             except Exception as e:
                 logger.error(f"Error processing chunk starting at {chunk_start}s: {e}")
+                raise e
             finally:
                 if os.path.exists(chunk_path):
                     os.remove(chunk_path)
